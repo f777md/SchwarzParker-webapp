@@ -40,13 +40,12 @@
       cursor: pointer;
     }
     button:active { background-color: #d70015; }
-    #status { margin-top: 15px; text-align: center; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <h2>🚨 Parksheriff Melden</h2>
-  <p>Melde eine Sichtung direkt in den Gruppenchat</p>
+  <p>Melde eine Sichtung direkt an den Bot</p>
 
   <label for="bezirk">Bezirk auswählen:</label>
   <select id="bezirk">
@@ -60,74 +59,24 @@
   <label for="strasse">Straße & Hausnummer / Gasse:</label>
   <input type="text" id="strasse" placeholder="z. B. Mariahilfer Straße 45">
 
-  <button id="sendBtn" onclick="sendData()">Meldung Absenden</button>
-  <div id="status"></div>
+  <button onclick="sendData()">Meldung Absenden</button>
 
   <script>
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
-    if (tg) { tg.expand(); }
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-    const BOT_TOKEN = "8721563240:AAGfSIiv1rUz6I4TWnU7B2k5bjTQXEx63iA";
-
-    async function sendData() {
+    function sendData() {
       const bezirk = document.getElementById('bezirk').value;
       const strasse = document.getElementById('strasse').value.trim();
-      const statusDiv = document.getElementById('status');
-      const sendBtn = document.getElementById('sendBtn');
 
       if (!strasse) {
         alert("Bitte gib eine Straße ein!");
         return;
       }
 
-      // Liest die Gruppen-Chat-ID direkt aus der URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const chatId = urlParams.get('chat_id');
-
-      if (!chatId) {
-        statusDiv.style.color = "#ff3b30";
-        statusDiv.innerText = "⚠️ Bitte den Link direkt über den Bot in Telegram öffnen!";
-        return;
-      }
-
-      sendBtn.disabled = true;
-      statusDiv.style.color = "#ffcc00";
-      statusDiv.innerText = "Meldung wird gesendet...";
-
-      let userName = "Anonym";
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        userName = tg.initDataUnsafe.user.first_name || "Anonym";
-      }
-
-      const reportText = `🚨 *PARKSHERIFF GESICHTET!* 🚨\n\n🏛 *Bezirk:* ${bezirk}\n📍 *Straße/Ort:* ${strasse}\n👤 *Gemeldet von:* ${userName}\n\n⚠️ _Achtung beim Parken!_`;
-
-      try {
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: reportText,
-            parse_mode: 'Markdown'
-          })
-        });
-
-        if (response.ok) {
-          statusDiv.style.color = "#30d158";
-          statusDiv.innerText = "✅ Erfolgreich in der Gruppe gepostet!";
-          setTimeout(() => {
-            if (tg && tg.close) { tg.close(); }
-          }, 1200);
-        } else {
-          statusDiv.style.color = "#ff3b30";
-          statusDiv.innerText = "❌ Fehler beim Senden. Prüfe Bot-Rechte in der Gruppe!";
-          sendBtn.disabled = false;
-        }
-      } catch (err) {
-        statusDiv.style.color = "#ff3b30";
-        statusDiv.innerText = "❌ Netzwerkfehler!";
-        sendBtn.disabled = false;
-      }
+      // Übergibt die eingegebenen Daten sicher als JSON an Telegram
+      tg.sendData(JSON.stringify({ bezirk: bezirk, strasse: strasse }));
+      tg.close();
     }
   </script>
 </body>

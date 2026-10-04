@@ -67,80 +67,34 @@
     const tg = window.Telegram ? window.Telegram.WebApp : null;
     if (tg) { tg.expand(); }
 
-    const BOT_TOKEN = "8721563240:AAGfSIiv1rUz6I4TWnU7B2k5bjTQXEx63iA";
-
-    async function sendData() {
+    function sendData() {
       const bezirk = document.getElementById('bezirk').value;
       const strasse = document.getElementById('strasse').value.trim();
       const statusDiv = document.getElementById('status');
-      const sendBtn = document.getElementById('sendBtn');
 
       if (!strasse) {
         alert("Bitte gib eine Straße ein!");
         return;
       }
 
-      let userName = "Anonym";
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        userName = tg.initDataUnsafe.user.first_name || "Anonym";
-      }
-
-      sendBtn.disabled = true;
-      statusDiv.style.color = "#ffcc00";
-      statusDiv.innerText = "Meldung wird gesendet...";
-
-      // Versuche zuerst die WebApp API
-      if (tg && tg.sendData) {
-        try {
-          tg.sendData(JSON.stringify({ bezirk: bezirk, strasse: strasse }));
-          tg.close();
-          return;
-        } catch (e) {
-          console.log("Fallback auf Bot API...");
-        }
-      }
-
-      // Falls es als normaler Web-Link geöffnet wurde: Sende die Meldung direkt an Telegram
-      // (Wir nutzen die chatId des Users aus den Telegram-Parametern oder senden eine Bestätigung)
+      // Liest die Parameter aus der URL aus
       const urlParams = new URLSearchParams(window.location.search);
       const chatId = urlParams.get('chat_id');
 
       if (!chatId) {
         statusDiv.style.color = "#ff3b30";
-        statusDiv.innerText = "Fehler: Öffne die Seite über den Bot-Link in Telegram!";
-        sendBtn.disabled = false;
+        statusDiv.innerText = "Fehler: Öffne die Seite über den Link in Telegram!";
         return;
       }
 
-      const text = `🚨 *PARKSHERIFF GESICHTET!* 🚨\n\n🏛 *Bezirk:* ${bezirk}\n📍 *Straße/Ort:* ${strasse}\n👤 *Gemeldet von:* ${userName}\n\n⚠️ _Achtung beim Parken!_`;
+      statusDiv.style.color = "#ffcc00";
+      statusDiv.innerText = "Meldung wird übermittelt...";
 
-      try {
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: text,
-            parse_mode: 'Markdown'
-          })
-        });
+      // Erstellt ein kompaktes Payload-Format: ChatID__Bezirk__Strasse
+      const payload = `${chatId}__${bezirk}__${strasse}`.replace(/ /g, "_");
 
-        if (response.ok) {
-          statusDiv.style.color = "#30d158";
-          statusDiv.innerText = "✅ Meldung erfolgreich gesendet!";
-          setTimeout(() => {
-            if (tg && tg.close) tg.close();
-          }, 1500);
-        } else {
-          statusDiv.style.color = "#ff3b30";
-          statusDiv.innerText = "Fehler beim Senden!";
-          sendBtn.disabled = false;
-        }
-      } catch (err) {
-        statusDiv.style.color = "#ff3b30";
-        statusDiv.innerText = "Netzwerkfehler!";
-        sendBtn.disabled = false;
-      }
+      // Leitet an den Bot weiter, um die Meldung sicher auszulösen
+      window.location.href = `https://t.me/Schwarzparker_bot?start=${payload}`;
     }
   </script>
 </body>
